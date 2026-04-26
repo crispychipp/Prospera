@@ -1,97 +1,89 @@
-const db = require("../config/db");
+const { Transaction, TransactionDetail, Product, sequelize } = require("../models");
+const { Op, fn, col, literal } = require("sequelize");
 
-// Summary
+// 1. Summary: Total transaksi, pendapatan, dan rata-rata penjualan
 const getSummary = async (req, res) => {
     try {
-        const sql = `
-            SELECT 
-            COUNT(*) AS total_transaction,
-            SUM(total_amount) AS revenue,
-            AVG(total_amount) AS average_sale
-            FROM Transactions
-        `;
-
-        const [rows] = await db.query(sql);
-        res.json(rows[0]);
-
+        const result = await Transaction.findAll({
+            attributes: [
+                [fn('COUNT', col('*')), 'total_transaction'],
+                [fn('SUM', col('total_amount')), 'revenue'],
+                [fn('AVG', col('total_amount')), 'average_sale']
+            ],
+            raw: true
+        });
+        
+        res.json(result[0]);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-// Profit
+// 2. Profit: Menghitung untung dan rugi berdasarkan harga modal vs harga jual
 const getProfit = async (req, res) => {
     try {
-        const sql = `
-        SELECT
-        SUM(
-            CASE 
-                WHEN selling_price > capital_cost
-                THEN (selling_price - capital_cost) * quantity
-                ELSE 0
-            END
-        ) AS total_profit,
+        const result = await TransactionDetail.findAll({
+            attributes: [
+                [
+                    literal(`SUM(CASE WHEN selling_price > capital_cost THEN (selling_price - capital_cost) * quantity ELSE 0 END)`), 
+                    'total_profit'
+                ],
+                [
+                    literal(`SUM(CASE WHEN selling_price < capital_cost THEN (capital_cost - selling_price) * quantity ELSE 0 END)`), 
+                    'total_loss'
+                ]
+            ],
+            raw: true
+        });
 
-        SUM(
-            CASE 
-                WHEN selling_price < capital_cost
-                THEN (capital_cost - selling_price) * quantity
-                ELSE 0
-            END
-        ) AS total_loss
-
-        FROM Transaction_details
-        `;
-
-        const [rows] = await db.query(sql);
-
-        const profit = rows[0].total_profit || 0;
-        const loss = rows[0].total_loss || 0;
+        const profit = parseFloat(result[0].total_profit) || 0;
+        const loss = parseFloat(result[0].total_loss) || 0;
 
         res.json({
             total_profit: profit,
             total_loss: loss,
             net_income: profit - loss
         });
-
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-// Top Product
+// 3. Top Product: 5 Produk paling laku
 const getTopProduct = async (req, res) => {
     try {
-        const sql = `
-            SELECT p.product_name, SUM(td.quantity) AS sold
-            FROM Transaction_details td
-            JOIN Products p ON td.product_id_fk = p.product_id
-            GROUP BY p.product_name
-            ORDER BY sold DESC
-            LIMIT 5
-        `;
-
-        const [rows] = await db.query(sql);
+        const rows = await TransactionDetail.findAll({
+            attributes: [
+                [fn('SUM', col('quantity')), 'sold']
+            ],
+            include: [{
+                model: Product,
+                attributes: ['product_name'],
+                required: true 
+            }],
+            group: ['Product.product_id', 'Product.product_name'],
+            order: [[literal('sold'), 'DESC']],
+            limit: 5
+        });
         res.json(rows);
-
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-// Monthly
+// 4. Monthly: Penjualan per bulan
 const getMonthly = async (req, res) => {
     try {
-        const sql = `
-            SELECT DATE_FORMAT(transaction_datetime,'%Y-%m') AS month,
-            SUM(total_amount) AS sales
-            FROM Transactions
-            GROUP BY DATE_FORMAT(transaction_datetime,'%Y-%m')
-        `;
-
-        const [rows] = await db.query(sql);
+        const rows = await Transaction.findAll({
+            attributes: [
+                [fn('DATE_FORMAT', col('transaction_datetime'), '%Y-%m'), 'month'],
+                [fn('SUM', col('total_amount')), 'sales']
+            ],
+            group: [fn('DATE_FORMAT', col('transaction_datetime'), '%Y-%m')],
+            order: [[literal('month'), 'ASC']],
+            raw: true
+        });
         res.json(rows);
-
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

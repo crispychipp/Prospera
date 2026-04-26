@@ -40,4 +40,10 @@ Object.keys(db).forEach(modelName => {
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
+// Tambahkan baris ini untuk mendaftarkan relasi secara manual
+db.TransactionDetail.belongsTo(db.Product, { foreignKey: 'product_id_fk' });
+db.Product.hasMany(db.TransactionDetail, { foreignKey: 'product_id_fk' });
+
+module.exports = db;
+module.exports = db;
 module.exports = db;
