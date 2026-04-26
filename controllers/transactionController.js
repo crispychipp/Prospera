@@ -1,13 +1,13 @@
 const { sequelize, Transaction, TransactionDetail, Product } = require('../models');
 
-// 1. Fungsi untuk melakukan proses pembayaran (Dilengkapi Sistem Rollback)
+// 1. Fungsi untuk melakukan transaksi
 const createTransaction = async (req, res) => {
     const userId = req.user.id; 
-    const { items } = req.body; 
+    const { items, transaction_datetime } = req.body; 
 
-    // Memvalidasi apakah keranjang belanja memiliki isi
-    if (!items || items.length === 0) {
-        return res.status(400).json({ message: "Keranjang belanja kosong!" });
+    // Memvalidasi apakah keranjang belanja memiliki isi dan formatnya benar
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ message: "Keranjang belanja kosong atau format salah!" });
     }
 
     // Membuka koneksi khusus untuk sistem pengamanan transaksi (Rollback)
@@ -17,10 +17,15 @@ const createTransaction = async (req, res) => {
         let total_amount = 0;
         let validItems = [];
 
-        // Tahap 1: Memeriksa ketersediaan stok produk dan menghitung total harga
+        // Memeriksa ketersediaan stok produk dan menghitung total harga
         for (let item of items) {
+            // Validasi keamanan untuk data kosong
+            if (!item.product_id || !item.quantity || item.quantity <= 0) {
+                throw new Error("Data item tidak valid (ID produk atau jumlah barang kosong/minus).");
+            }
+
             // Mengambil data produk sekaligus mengunci baris data tersebut (FOR UPDATE)
-            // Hal ini mencegah pembeli lain mengambil stok yang sama di waktu yang bersamaan
+            // ini mencegah pembeli lain mengambil stok yang sama di waktu yang bersamaan
             const product = await Product.findOne({
                 where: { 
                     product_id: item.product_id, 
@@ -50,16 +55,18 @@ const createTransaction = async (req, res) => {
             });
         }
 
-        // Tahap 2: Membuat pencatatan struk utama di tabel Transactions
+        // Membuat pencatatan struk utama di tabel Transactions
         const newTransaction = await Transaction.create(
             {
                 user_id_fk: userId,
-                total_amount: total_amount
+                total_amount: total_amount,
+                status: 'success',
+                transaction_datetime: transaction_datetime ? new Date(transaction_datetime) : new Date()
             },
             { transaction: t }
         );
 
-        // Tahap 3: Memasukkan rincian barang ke Transaction_details dan mengurangi stok
+        // Memasukkan rincian barang ke Transaction_details dan mengurangi stok
         for (let vItem of validItems) {
             await TransactionDetail.create(
                 {
@@ -92,14 +99,15 @@ const createTransaction = async (req, res) => {
 
     } catch (error) {
         // Mengeksekusi pembatalan (rollback) basis data.
-        // Proses ini akan membatalkan seluruh kueri yang sudah berjalan 
-        // apabila terjadi kegagalan pada tahapan apa pun di atas.
         await t.rollback();
-        
         console.error("Transaksi Gagal, Rollback dilakukan:", error.message);
         
         // Mengirimkan pesan kesalahan spesifik ke sisi klien (Frontend)
-        if (error.message.includes("tidak ditemukan") || error.message.includes("tidak mencukupi")) {
+        const isClientError = error.message.includes("tidak ditemukan") || 
+                              error.message.includes("tidak mencukupi") || 
+                              error.message.includes("tidak valid");
+                              
+        if (isClientError) {
             res.status(400).json({ message: error.message });
         } else {
             res.status(500).json({ message: "Terjadi kesalahan pada mesin transaksi." });
