@@ -1,15 +1,15 @@
 const express = require("express");
 const router = express.Router();
 
-// Middleware auth (kalau project timmu pakai proteksi JWT)
 const authMiddleware = require("../middleware/authMiddleware");
 
-// Import controller analytics
 const {
     getSummary,
     getProfit,
     getTopProduct,
-    getMonthly
+    getMonthly,
+    exportSummaryExcel,
+    exportSummaryCsv 
 } = require("../controllers/analyticsController");
 
 // Routes
@@ -20,5 +20,8 @@ router.get("/profit", authMiddleware, getProfit);
 router.get("/top-product", authMiddleware, getTopProduct);
 
 router.get("/monthly", authMiddleware, getMonthly);
+
+router.get("/summary/export/excel", authMiddleware, exportSummaryExcel); 
+router.get("/summary/export/csv", authMiddleware, exportSummaryCsv);
 
 module.exports = router;
