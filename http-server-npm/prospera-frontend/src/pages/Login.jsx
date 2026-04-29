@@ -1,36 +1,63 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Dashboard from "../components/Dashboard";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const nav = useNavigate();
 
-  const login = (e) => {
-    e.preventDefault();
-    localStorage.setItem("user", email);
-    nav("/products");
+  const login = async () => {
+    console.log("CLICK LOGIN");
+
+    try {
+      const res = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ email, password })
+      });
+
+      console.log("STATUS:", res.status);
+
+      if (res.ok) {
+        console.log("LOGIN SUCCESS");
+
+        localStorage.setItem("isLogin", "true");
+        nav("/products");
+
+      } else {
+        console.log("LOGIN FAILED");
+        alert("Login gagal");
+      }
+
+    } catch (err) {
+      console.log("ERROR:", err);
+    }
   };
 
   return (
-    <div style={wrapper}>
-      <form onSubmit={login} className="card" style={{ width: 300 }}>
-        <h2 style={{ marginBottom: 20 }}>Login</h2>
+    <div className="login-page">
 
-        <input className="input" placeholder="Email" onChange={e => setEmail(e.target.value)} />
-        <input className="input" type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
+      <div className="login-card">
+        <h2>Welcome to Prospera</h2>
+        <p className="subtitle">Ready to Prosper</p>
 
-        <button className="button" style={{ width: "100%", marginTop: 10 }}>
+        <input className="input" placeholder="Email"
+          value={email} onChange={e => setEmail(e.target.value)} />
+
+        <input className="input" placeholder="Password" type="password"
+          value={password} onChange={e => setPassword(e.target.value)} />
+
+        <button className="button" onClick={login}>
           Login
         </button>
-      </form>
+      </div>
     </div>
-  );
-}
+  )};
 
 const wrapper = {
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
   height: "100vh"
-};
+}

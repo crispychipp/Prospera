@@ -5,42 +5,83 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [name, setName] = useState("");
   const [stock, setStock] = useState("");
+  const role = localStorage.getItem("role");
 
   const fetchData = () => {
-    fetch("http://127.0.0.1:5000/products")
+    fetch("http://localhost:5000/products")
       .then(res => res.json())
       .then(setProducts);
   };
 
   useEffect(fetchData, []);
 
-  const add = async () => {
-    await fetch("http://127.0.0.1:5000/products", {
+  const addProduct = async () => {
+    await fetch("http://localhost:5000/products", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ name, stock: Number(stock) })
     });
-    setName(""); setStock("");
+
+    setName("");
+    setStock("");
+    fetchData();
+  };
+  {role === "admin" && (
+    <button
+      style={{ marginLeft: 10 }}
+      onClick={() => deleteProduct(p.id)}
+    >
+      Delete
+    </button>
+  )}
+
+  const deleteProduct = async (id) => {
+    await fetch(`http://localhost:5000/products/${id}`, {
+      method: "DELETE"
+    });
     fetchData();
   };
 
   return (
     <Dashboard>
-      <h2>Products</h2>
-
       <div className="card">
-        <input className="input" placeholder="Name" value={name} onChange={e => setName(e.target.value)} />
-        <input className="input" placeholder="Stock" value={stock} onChange={e => setStock(e.target.value)} />
-        <button className="button" onClick={add}>Add</button>
-      </div>
+        <h2>Product Management</h2>
 
-      <div style={{ marginTop: 20 }}>
-        {products.map(p => (
-          <div key={p.id} className="card" style={{ marginBottom: 10 }}>
-            <b>{p.name}</b>  
-            <div style={{ color: "var(--text-secondary)" }}>Stock: {p.stock}</div>
+        <div className="form-row">
+          <input
+            className="input"
+            placeholder="Product name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+
+          <input
+            className="input"
+            placeholder="Stock"
+            value={stock}
+            onChange={(e) => setStock(e.target.value)}
+          />
+
+          <button className="button">Add</button>
+        </div>
+        <div className="card">
+        <h3>Daftar Produk</h3>
+
+        {products.map((p, i) => (
+          <div className="product-item" key={i}>
+            
+            <div>
+              <b>{p.name}</b>
+              <div className="stock">Stock: {p.stock}</div>
+            </div>
+
+            <span className={p.stock < 10 ? "badge low" : "badge safe"}>
+              {p.stock < 10 ? "Low" : "Safe"}
+            </span>
+
           </div>
         ))}
+      </div>
       </div>
     </Dashboard>
   );

@@ -1,10 +1,10 @@
 import { Navigate } from "react-router-dom";
 
-export default function ProtectedRoute({ children }) {
-  const user = localStorage.getItem("user");
+export default function Protected({ children }) {
+  const isLogin = localStorage.getItem("isLogin");
 
-  if (!user) {
-    return <Navigate to="/" />;
+  if (!isLogin) {
+    return <Navigate to="/products" />;
   }
 
   return children;

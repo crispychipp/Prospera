@@ -1,44 +1,59 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export default function Dashboard({ children }) {
+  const loc = useLocation();
+
+  const menu = [
+    { path: "/products", label: "Products", icon: "bi-box" },
+    { path: "/inventory", label: "Inventory", icon: "bi-exclamation-triangle" },
+    { path: "/transaction", label: "Transactions", icon: "bi-archive-fill" }
+  ];
+
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
-      
-      {/* Sidebar */}
+    <div style={{ display: "flex" }}>
+
+      {/* SIDEBAR */}
       <div style={{
         width: "240px",
-        background: "var(--blue-primary)",
-        color: "white",
-        padding: "20px"
+        minHeight: "100vh",
+        padding: "20px",
+        background: "linear-gradient(to bottom, var(--blue-primary), var(--green-primary))",
+        color: "white"
       }}>
-        <h2>Prospera</h2>
+        <h2 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <i className="bi bi-stack" style={{ fontSize: "24px" }}></i>
+          Prospera BI
+        </h2>
 
-        <div style={{ marginTop: "30px" }}>
-          <NavItem to="/products" label="📦 Products" />
-          <NavItem to="/inventory" label="⚠ Inventory" />
-          <NavItem to="/transactions" label="💰 Transactions" />
-        </div>
+        {menu.map(m => (
+          <Link
+            key={m.path}
+            to={m.path}
+            style={{
+              display: "block",
+              padding: "10px",
+              marginTop: "10px",
+              borderRadius: "8px",
+              background: loc.pathname === m.path
+                ? "rgba(255,255,255,0.2)"
+                : "transparent",
+              color: "white",
+              textDecoration: "none"
+            }}
+          >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <i className={`bi ${m.icon}`}></i>
+            <span>{m.label}</span>
+          </div>
+          </Link>
+        ))}
       </div>
 
-      {/* Main */}
-      <div style={{ flex: 1, padding: "25px" }}>
+      {/* CONTENT */}
+      <div style={{ flex: 1, padding: "30px" }}>
         {children}
       </div>
-    </div>
-  );
-}
 
-function NavItem({ to, label }) {
-  return (
-    <Link to={to} style={{
-      display: "block",
-      color: "white",
-      padding: "10px",
-      borderRadius: "8px",
-      textDecoration: "none",
-      marginBottom: "10px"
-    }}>
-      {label}
-    </Link>
+    </div>
   );
 }

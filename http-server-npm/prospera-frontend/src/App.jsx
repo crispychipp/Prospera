@@ -5,6 +5,7 @@ import Inventory from "./pages/Inventory.jsx";
 import Transaction from "./pages/Transaction.jsx";
 import Protected from "./components/Protected.jsx";
 
+
 export default function App() {
   return (
     <BrowserRouter>
