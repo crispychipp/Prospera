@@ -2,26 +2,31 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
-// Mengimpor koneksi Sequelize dari folder models (Menggantikan config/db lama)
-const { sequelize } = require('./models'); 
+const { sequelize } = require('./models');
 
 const app = express();
 
 // Konfigurasi middleware standar
-app.use(cors()); 
-app.use(express.json()); 
+app.use(cors());
+app.use(express.json());
 
-// 1. Mengimpor rute aplikasi
+// Mengimpor rute aplikasi
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
+const forecastRoutes = require('./routes/forecastRoutes');
 
-// 2. Mendaftarkan rute antarmuka pemrograman aplikasi (API) ke dalam peladen (server)
+// Mendaftarkan rute antarmuka pemrograman aplikasi ke dalam server
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/forecast', forecastRoutes);
 
-// Rute pengujian peladen (Root)
+// Rute pengujian server
 app.get('/', (req, res) => {
     res.status(200).json({ message: "Server Backend Prospera berjalan dengan baik." });
 });
@@ -32,14 +37,12 @@ app.use((req, res) => {
     res.status(404).json({ message: `Rute ${req.originalUrl} tidak ditemukan pada server ini.` });
 });
 
-// Penanganan Kesalahan Global (Global Error Handler)
-// Menangkap kesalahan sistem yang tidak terduga agar peladen tidak berhenti beroperasi secara paksa
+// Penanganan Kesalahan Global 
 app.use((err, req, res, next) => {
     console.error("Kesalahan Fatal Sistem:", err.stack);
     res.status(500).json({ message: "Terjadi kesalahan internal sistem yang tidak terduga." });
 });
 
-// Menjalankan peladen pada port yang telah dikonfigurasi
 const PORT = process.env.PORT || 5000;
 
 sequelize.authenticate()
