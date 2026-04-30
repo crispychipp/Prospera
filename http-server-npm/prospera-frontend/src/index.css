@@ -265,7 +265,13 @@ html, body {
     min-height: 350px;
 }
 
+.form-row {
+  display: flex;
+  gap: 10px;
+}
+
 .input {
+  flex: auto;
   padding: 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
@@ -292,6 +298,7 @@ html, body {
 
 .button:hover {
   background: var(--blue-light);
+  color: var(--green-light);
 }
 
 .login-page {
@@ -334,4 +341,12 @@ html, body {
 .badge.safe {
   background: #dcfce7;
   color: green;
+}
+
+.product-item {
+  transition: 0.2s;
+}
+
+.product-item:hover {
+  background: rgba(0,0,0,0.02);
 }

@@ -1,87 +1,93 @@
 import { useEffect, useState } from "react";
 import Dashboard from "../components/Dashboard";
+import { getProducts, saveProducts } from "../utils/storage";
 
 export default function Products() {
   const [products, setProducts] = useState([]);
+
   const [name, setName] = useState("");
   const [stock, setStock] = useState("");
-  const role = localStorage.getItem("role");
 
-  const fetchData = () => {
-    fetch("http://localhost:5000/products")
-      .then(res => res.json())
-      .then(setProducts);
-  };
+  // LOAD SETIAP MASUK PAGE
+  useEffect(() => {
+    const load = () => {
+      setProducts(getProducts());
+    };
 
-  useEffect(fetchData, []);
+    load();
 
-  const addProduct = async () => {
-    await fetch("http://localhost:5000/products", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ name, stock: Number(stock) })
-    });
+    window.addEventListener("focus", load);
+
+    return () => window.removeEventListener("focus", load);
+  }, []);
+
+  useEffect(() => {
+    setProducts(getProducts());
+  }, []);
+
+  const addProduct = () => {
+    if (!name || !stock) return alert("Isi semua field");
+
+    const newProduct = {
+      id: Date.now(),
+      name,
+      stock: Number(stock)
+    };
+
+    const updated = [...products, newProduct];
+
+    setProducts(updated);
+    saveProducts(updated); // 🔥 langsung save juga
 
     setName("");
     setStock("");
-    fetchData();
-  };
-  {role === "admin" && (
-    <button
-      style={{ marginLeft: 10 }}
-      onClick={() => deleteProduct(p.id)}
-    >
-      Delete
-    </button>
-  )}
-
-  const deleteProduct = async (id) => {
-    await fetch(`http://localhost:5000/products/${id}`, {
-      method: "DELETE"
-    });
-    fetchData();
   };
 
   return (
     <Dashboard>
       <div className="card">
-        <h2>Product Management</h2>
+        <h2>📦 Product Management</h2>
 
-        <div className="form-row">
-          <input
-            className="input"
-            placeholder="Product name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-
-          <input
-            className="input"
-            placeholder="Stock"
-            value={stock}
-            onChange={(e) => setStock(e.target.value)}
-          />
-
-          <button className="button">Add</button>
-        </div>
         <div className="card">
-        <h3>Daftar Produk</h3>
+          <h3>Add Product</h3>
 
-        {products.map((p, i) => (
-          <div className="product-item" key={i}>
-            
-            <div>
-              <b>{p.name}</b>
-              <div className="stock">Stock: {p.stock}</div>
-            </div>
+          <div className="form-row">
+            <input
+              className="input"
+              placeholder="Product name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
 
-            <span className={p.stock < 10 ? "badge low" : "badge safe"}>
-              {p.stock < 10 ? "Low" : "Safe"}
-            </span>
+            <input
+              className="input"
+              placeholder="Stock"
+              value={stock}
+              onChange={(e) => setStock(e.target.value)}
+            />
 
+            <button className="button" onClick={addProduct}>
+              Add
+            </button>
           </div>
-        ))}
-      </div>
+        </div>
+
+        <div className="card">
+          <h3>Daftar Produk</h3>
+
+          {products.map(p => (
+            <div key={p.id} className="product-item">
+              <div>
+                <b>{p.name}</b>
+                <div className="stock">Stock: {p.stock}</div>
+              </div>
+
+              <span className={p.stock < 10 ? "badge low" : "badge safe"}>
+                {p.stock < 10 ? "Low" : "Safe"}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </Dashboard>
   );

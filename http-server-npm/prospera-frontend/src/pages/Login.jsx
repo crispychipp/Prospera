@@ -47,10 +47,12 @@ export default function Login() {
 
         <input className="input" placeholder="Password" type="password"
           value={password} onChange={e => setPassword(e.target.value)} />
-
-        <button className="button" onClick={login}>
-          Login
-        </button>
+          
+        <div> 
+          <button className="button" onClick={login}>
+            Login
+          </button>
+        </div> 
       </div>
     </div>
   )};
