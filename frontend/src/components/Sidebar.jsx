@@ -1,8 +1,23 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { clearAuthSession } from '../utils/api';
 
 function Sidebar() {
     const navigate = useNavigate();
+    const [username, setUsername] = useState("");
+
+    useEffect(() => {
+        const userData = localStorage.getItem("userData") || localStorage.getItem("user");
+        if (userData) {
+            try {
+                const user = JSON.parse(userData);
+                setUsername(user.username || user.name || "");
+            } catch (err) {
+                console.error("Error parsing user data:", err);
+            }
+        }
+    }, []);
+
     const menu = [
         { path: '/dashboard', label: 'Dashboard', icon: 'fas fa-th-large' },
         { path: '/products', label: 'Produk', icon: 'fas fa-box' },
@@ -22,6 +37,14 @@ function Sidebar() {
                 <div className="logo px-2">
                     <i className="fas fa-layer-group"/><span>Prospera</span>
                 </div>
+
+                {username && (
+                    <div className="px-3 mb-4 text-center">
+                        <small className="d-block text-white-50">Selamat datang,</small>
+                        <div className="fw-bold text-white h6 mb-0">Hi, {username}!</div>
+                    </div>
+                )}
+
                 <ul className="nav flex-column">
                     {menu.map((item) => (
                         <li className="nav-item" key={item.path}>

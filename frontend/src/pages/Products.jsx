@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Dashboard from "../components/Dashboard";
 import { authFetch } from "../utils/api";
 
 export default function Products() {
@@ -101,6 +102,7 @@ export default function Products() {
   });
 
   return (
+    <>
       <div className="card">
         <h2>📦 Product Management</h2>
 
@@ -159,8 +161,12 @@ export default function Products() {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
                     <div>
-                      <small style={{ color: "gray" }}>ID: {p.product_id || p.id}</small>
-                      <br />
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+                        <small style={{ color: "gray" }}>ID: {p.product_id || p.id}</small>
+                        <span className={(p.product_stock || p.stock) < 10 ? "badge low" : "badge safe"} style={{ padding: "2px 8px", fontSize: "10px" }}>
+                          {(p.product_stock || p.stock) < 10 ? "Low" : "Safe"}
+                        </span>
+                      </div>
                       <b>{p.product_name || p.name}</b>
                     </div>
                     <div>
@@ -176,9 +182,6 @@ export default function Products() {
                     Modal: Rp{p.product_cost} | Jual: Rp{p.product_price} | Stok: {p.product_stock}
                   </div>
                 </div>
-                <span className={(p.product_stock || p.stock) < 10 ? "badge low" : "badge safe"}>
-                  {(p.product_stock || p.stock) < 10 ? "Low" : "Safe"}
-                </span>
               </div>
             ))
           ) : (
@@ -188,5 +191,6 @@ export default function Products() {
           )}
         </div>
       </div>
+    </>
   );
 }

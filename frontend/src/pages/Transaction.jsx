@@ -8,7 +8,8 @@ export default function Transaction() {
 
   const [selectedProductId, setSelectedProductId] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [transactionType, setTransactionType] = useState("SELL");
+  const [modal, setModal] = useState("");
+  const [hargaJual, setHargaJual] = useState("");
   const [datetime, setDatetime] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,7 +55,19 @@ export default function Transaction() {
       return;
     }
 
-    if (transactionType === "SELL" && selectedProduct.product_stock < qty) {
+    const mod = Number(modal);
+    if (!mod || mod <= 0) {
+      setMessage("Modal harus lebih dari 0.");
+      return;
+    }
+
+    const harga = Number(hargaJual);
+    if (!harga || harga <= 0) {
+      setMessage("Harga jual harus lebih dari 0.");
+      return;
+    }
+
+    if (selectedProduct.product_stock < qty) {
       setMessage(`Stok ${selectedProduct.product_name} tidak cukup.`);
       return;
     }
@@ -65,13 +78,16 @@ export default function Transaction() {
         product_id: selectedProduct.product_id,
         product_name: selectedProduct.product_name,
         quantity: qty,
-        type: transactionType,
+        modal: mod,
+        hargaJual: harga,
         datetime: datetime || ""
       }
     ]);
 
     setSelectedProductId("");
     setQuantity("");
+    setModal("");
+    setHargaJual("");
     setDatetime("");
     setMessage("");
   };
@@ -82,11 +98,9 @@ export default function Transaction() {
 
   const totalAmount = useMemo(() => {
     return cartItems.reduce((sum, item) => {
-      const product = products.find((p) => p.product_id === item.product_id);
-      const perUnit = item.type === "SELL" ? (product?.product_price || 0) : (product?.product_cost || 0);
-      return sum + perUnit * item.quantity;
+      return sum + item.hargaJual * item.quantity;
     }, 0);
-  }, [cartItems, products]);
+  }, [cartItems]);
 
   const saveTransaction = async () => {
     if (cartItems.length === 0) {
@@ -94,51 +108,25 @@ export default function Transaction() {
       return;
     }
 
-    const buyItems = cartItems.filter((item) => item.type === "BUY");
-    const sellItems = cartItems.filter((item) => item.type === "SELL");
     setSaving(true);
     setMessage("");
 
     try {
-      let buyMessage = "";
-      let sellMessage = "";
+      const payload = {
+        items: cartItems.map((item) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          capital_cost: item.modal,
+          selling_price: item.hargaJual
+        }))
+      };
 
-      if (buyItems.length > 0) {
-        for (const item of buyItems) {
-          const product = products.find((p) => p.product_id === item.product_id);
-          if (!product) throw new Error(`Produk dengan ID ${item.product_id} tidak ditemukan.`);
+      const response = await authFetch("/transactions/checkout", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
 
-          await authFetch(`/products/${item.product_id}`, {
-            method: "PUT",
-            body: JSON.stringify({
-              product_name: product.product_name,
-              product_cost: product.product_cost,
-              product_price: product.product_price,
-              product_stock: product.product_stock + item.quantity
-            })
-          });
-        }
-        buyMessage = `${buyItems.length} item pembelian berhasil ditambahkan ke stok.`;
-      }
-
-      if (sellItems.length > 0) {
-        const payload = {
-          items: sellItems.map((item) => ({
-            product_id: item.product_id,
-            quantity: item.quantity
-          }))
-        };
-
-        const response = await authFetch("/transactions/checkout", {
-          method: "POST",
-          body: JSON.stringify(payload)
-        });
-
-        sellMessage = `Penjualan berhasil. Total: Rp${response.total_belanja}`;
-      }
-
-      const summary = [sellMessage, buyMessage].filter(Boolean).join(" ");
-      setMessage(summary || "Transaksi berhasil disimpan.");
+      setMessage(`Penjualan berhasil. Total: Rp${response.total_belanja}`);
       setCartItems([]);
       fetchProducts();
       fetchHistory();
@@ -154,9 +142,6 @@ export default function Transaction() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap" }}>
           <div>
             <h2>Transaction</h2>
-            <p style={{ margin: 0, color: "#6B7280" }}>
-              Pilih produk, masukkan quantity, dan simpan transaksi harian Anda.
-            </p>
           </div>
         </div>
 
@@ -168,40 +153,46 @@ export default function Transaction() {
 
         <div className="card" style={{ marginBottom: "24px" }}>
           <h3>Tambah Item Transaksi</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1.5fr 0.75fr 1fr 1fr auto", gap: "12px", alignItems: "end" }}>
-            <div>
-              <label style={{ display: "block", marginBottom: "6px" }}>Pilih Produk</label>
-              <select className="input" value={selectedProductId} onChange={(e) => setSelectedProductId(e.target.value)}>
-                <option value="">Pilih Produk</option>
-                {products.map((product) => (
-                  <option key={product.product_id} value={product.product_id}>
-                    {product.product_name} (Stok: {product.product_stock})
-                  </option>
-                ))}
-              </select>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px", alignItems: "end" }}>
+              <div>
+                <label style={{ display: "block", marginBottom: "6px" }}>Pilih Produk</label>
+                <select className="input" value={selectedProductId} onChange={(e) => setSelectedProductId(e.target.value)}>
+                  <option value="">Pilih Produk</option>
+                  {products.map((product) => (
+                    <option key={product.product_id} value={product.product_id}>
+                      {product.product_name} (Stok: {product.product_stock})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: "block", marginBottom: "6px" }}>Quantity</label>
+                <input className="input" type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="Qty" />
+              </div>
             </div>
 
-            <div>
-              <label style={{ display: "block", marginBottom: "6px" }}>Quantity</label>
-              <input className="input" type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="Qty" />
-            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.5fr auto", gap: "12px", alignItems: "end" }}>
+              <div>
+                <label style={{ display: "block", marginBottom: "6px" }}>Modal</label>
+                <input className="input" type="number" min="0" step="0.01" value={modal} onChange={(e) => setModal(e.target.value)} placeholder="Modal" />
+              </div>
 
-            <div>
-              <label style={{ display: "block", marginBottom: "6px" }}>Tipe</label>
-              <select className="input" value={transactionType} onChange={(e) => setTransactionType(e.target.value)}>
-                <option value="SELL">Sell</option>
-                <option value="BUY">Buy</option>
-              </select>
-            </div>
+              <div>
+                <label style={{ display: "block", marginBottom: "6px" }}>Harga Jual</label>
+                <input className="input" type="number" min="0" step="0.01" value={hargaJual} onChange={(e) => setHargaJual(e.target.value)} placeholder="Harga Jual" />
+              </div>
 
-            <div>
-              <label style={{ display: "block", marginBottom: "6px" }}>Datetime (opsional)</label>
-              <input className="input" type="datetime-local" value={datetime} onChange={(e) => setDatetime(e.target.value)} />
-            </div>
+              <div>
+                <label style={{ display: "block", marginBottom: "6px" }}>Datetime (opsional)</label>
+                <input className="input" type="datetime-local" value={datetime} onChange={(e) => setDatetime(e.target.value)} />
+              </div>
 
-            <button className="button" style={{ height: "42px" }} onClick={addItem}>
-              + Tambah
-            </button>
+              <button className="button" style={{ height: "42px" }} onClick={addItem}>
+                + Tambah
+              </button>
+            </div>
           </div>
         </div>
 
@@ -216,7 +207,8 @@ export default function Transaction() {
                   <tr style={{ textAlign: "left", borderBottom: "2px solid #E5E7EB" }}>
                     <th style={{ padding: "10px" }}>Nama Produk</th>
                     <th style={{ padding: "10px" }}>Quantity</th>
-                    <th style={{ padding: "10px" }}>Type</th>
+                    <th style={{ padding: "10px" }}>Modal</th>
+                    <th style={{ padding: "10px" }}>Harga Jual</th>
                     <th style={{ padding: "10px" }}>Datetime</th>
                     <th style={{ padding: "10px" }}>Subtotal</th>
                     <th style={{ padding: "10px" }}></th>
@@ -224,14 +216,14 @@ export default function Transaction() {
                 </thead>
                 <tbody>
                   {cartItems.map((item, index) => {
-                    const product = products.find((p) => p.product_id === item.product_id);
                     return (
                       <tr key={`${item.product_id}-${index}`}>
                         <td style={{ padding: "10px" }}>{item.product_name}</td>
                         <td style={{ padding: "10px" }}>{item.quantity}</td>
-                        <td style={{ padding: "10px" }}>{item.type}</td>
+                        <td style={{ padding: "10px" }}>Rp{item.modal}</td>
+                        <td style={{ padding: "10px" }}>Rp{item.hargaJual}</td>
                         <td style={{ padding: "10px" }}>{item.datetime ? new Date(item.datetime).toLocaleString() : "-"}</td>
-                        <td style={{ padding: "10px" }}>Rp{(item.type === "SELL" ? (product?.product_price || 0) : (product?.product_cost || 0)) * item.quantity}</td>
+                        <td style={{ padding: "10px" }}>Rp{item.hargaJual * item.quantity}</td>
                         <td style={{ padding: "10px" }}>
                           <button className="button" style={{ background: "#EF4444", color: "white" }} onClick={() => removeItem(index)}>
                             Hapus
