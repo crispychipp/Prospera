@@ -70,6 +70,30 @@ module.exports = {
       currentTransactionId++;
     }
 
+    // --- TAMBAHAN KHUSUS UNTUK NGETES OUTLIER ULYA ---
+    // Bikin 1 transaksi "Borongan Super Besar" di tanggal 27 April 2026
+    // Biar masuk ke jangkauan 7 hari terakhir dan memicu deteksi outlier
+    const outlierDate = "2026-04-27 10:00:00"; 
+    
+    transactionDetailsData.push({
+      transaction_id_fk: currentTransactionId,
+      product_id_fk: 4, // Beli produk mahal (cost 45rb, price 55rb)
+      quantity: 150, // <-- Beli 150 unit sekaligus biar omsetnya anomali
+      capital_cost: 45000,
+      selling_price: 55000,  
+      sub_total: 55000 * 150 // Total Rp 8.250.000
+    });
+
+    transactionsData.push({
+      user_id_fk: 1, 
+      total_amount: 8250000, 
+      status: 'success', // Status WAJIB success biar dihitung forecast
+      transaction_datetime: outlierDate
+    });
+    
+    currentTransactionId++;
+    // --- AKHIR TAMBAHAN OUTLIER ---
+
     await queryInterface.bulkInsert('Transactions', transactionsData, {});
     await queryInterface.bulkInsert('Transaction_details', transactionDetailsData, {});
   },
