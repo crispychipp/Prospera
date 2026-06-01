@@ -3,7 +3,7 @@ const { sequelize, Transaction, TransactionDetail, Product } = require('../model
 // 1. Fungsi untuk melakukan proses pembayaran (Dilengkapi Sistem Rollback)
 const createTransaction = async (req, res) => {
     const userId = req.user.id; 
-    const { items } = req.body; 
+    const { transaction_type = null, transaction_datetime, items } = req.body; 
 
     // Memvalidasi apakah keranjang belanja memiliki isi
     if (!items || items.length === 0) {
@@ -34,7 +34,12 @@ const createTransaction = async (req, res) => {
                 throw new Error(`Produk dengan ID ${item.product_id} tidak ditemukan.`);
             }
 
-            if (product.product_stock < item.quantity) {
+            const itemTransactionType = item.transaction_type || transaction_type || 'sell';
+            if (!['sell', 'buy'].includes(itemTransactionType)) {
+                throw new Error(`Tipe transaksi tidak valid untuk produk ${product.product_name}.`);
+            }
+
+            if (itemTransactionType === 'sell' && product.product_stock < item.quantity) {
                 throw new Error(`Stok ${product.product_name} tidak mencukupi. Sisa stok: ${product.product_stock}`);
             }
 
@@ -48,15 +53,19 @@ const createTransaction = async (req, res) => {
                 quantity: item.quantity,
                 capital_cost: capital_cost,
                 selling_price: selling_price,
-                sub_total: sub_total
+                sub_total: sub_total,
+                transaction_type: itemTransactionType
             });
         }
 
         // Tahap 2: Membuat pencatatan struk utama di tabel Transactions
+        const itemTypes = Array.from(new Set(validItems.map((item) => item.transaction_type)));
         const newTransaction = await Transaction.create(
             {
                 user_id_fk: userId,
-                total_amount: total_amount
+                total_amount: total_amount,
+                transaction_type: itemTypes.length === 1 ? itemTypes[0] : itemTypes[0],
+                transaction_datetime: transaction_datetime || undefined
             },
             { transaction: t }
         );
@@ -70,17 +79,26 @@ const createTransaction = async (req, res) => {
                     quantity: vItem.quantity,
                     capital_cost: vItem.capital_cost,
                     selling_price: vItem.selling_price,
-                    sub_total: vItem.sub_total
+                    sub_total: vItem.sub_total,
+                    transaction_type: vItem.transaction_type
                 },
                 { transaction: t }
             );
 
-            // Mengurangi jumlah stok produk secara langsung di basis data
-            await Product.decrement('product_stock', {
-                by: vItem.quantity,
-                where: { product_id: vItem.product_id },
-                transaction: t
-            });
+            // Menyesuaikan jumlah stok produk berdasarkan jenis transaksi
+            if (vItem.transaction_type === 'sell') {
+                await Product.decrement('product_stock', {
+                    by: vItem.quantity,
+                    where: { product_id: vItem.product_id },
+                    transaction: t
+                });
+            } else {
+                await Product.increment('product_stock', {
+                    by: vItem.quantity,
+                    where: { product_id: vItem.product_id },
+                    transaction: t
+                });
+            }
         }
 
         // Menyimpan seluruh perubahan secara permanen ke basis data jika tidak ada kesalahan
@@ -117,7 +135,18 @@ const getTransactionHistory = async (req, res) => {
         // Mengambil seluruh data riwayat dan mengurutkannya dari yang paling baru (DESC)
         const transactions = await Transaction.findAll({
             where: { user_id_fk: userId },
-            order: [['transaction_datetime', 'DESC']]
+            order: [['transaction_datetime', 'DESC']],
+            include: [
+                {
+                    model: TransactionDetail,
+                    include: [
+                        {
+                            model: Product,
+                            attributes: ['product_name']
+                        }
+                    ]
+                }
+            ]
         });
         
         res.status(200).json(transactions);

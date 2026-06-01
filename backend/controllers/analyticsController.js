@@ -56,7 +56,7 @@ const getSummary = async (req, res) => {
                 where: {
                     ...getDateFilter(startDate, endDate),
                     user_id_fk: userId,
-                    status: 'success' 
+                    status: 'success'
                 }
             }],
             attributes: [
@@ -130,7 +130,7 @@ const getSummary = async (req, res) => {
                     where: {
                         ...getDateFilter(startDate, endDate),
                         user_id_fk: userId,
-                        status: 'success' 
+                        status: 'success'
                     }
                 }
             ],
@@ -246,7 +246,7 @@ const getTopProduct = async (req, res) => {
                     where: {
                         ...getDateFilter(startDate, endDate),
                         user_id_fk: userId,
-                        status: 'success' 
+                        status: 'success'
                     }
                 }
             ],
@@ -281,7 +281,7 @@ const getMonthly = async (req, res) => {
                 where: {
                     ...getDateFilter(startDate, endDate),
                     user_id_fk: userId,
-                    status: 'success' 
+                    status: 'success'
                 }
             }],
             attributes: [

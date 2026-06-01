@@ -7,6 +7,7 @@ export default function Transaction() {
   const [cartItems, setCartItems] = useState([]);
 
   const [selectedProductId, setSelectedProductId] = useState("");
+  const [transactionType, setTransactionType] = useState("sell");
   const [quantity, setQuantity] = useState("");
   const [modal, setModal] = useState("");
   const [hargaJual, setHargaJual] = useState("");
@@ -15,10 +16,11 @@ export default function Transaction() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // --- STATE BARU UNTUK CUSTOM SEARCH DROPDOWN ---
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  // -----------------------------------------------
+
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
 
   const fetchProducts = async () => {
     try {
@@ -46,13 +48,33 @@ export default function Transaction() {
     fetchHistory();
   }, []);
 
-  // --- LOGIKA FILTER PENCARIAN PRODUK ---
   const filteredProducts = products.filter((p) =>
     p.product_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  // --------------------------------------
 
   const selectedProduct = products.find((p) => String(p.product_id) === String(selectedProductId));
+
+  useEffect(() => {
+    if (!selectedProduct) {
+      setModal("");
+      setHargaJual("");
+      return;
+    }
+
+    if (!modal) {
+      setModal(String(selectedProduct.product_cost ?? ""));
+    }
+
+    if (!hargaJual) {
+      setHargaJual(
+        String(
+          transactionType === "sell"
+            ? selectedProduct.product_price ?? selectedProduct.product_cost
+            : selectedProduct.product_cost
+        )
+      );
+    }
+  }, [selectedProduct, transactionType]);
 
   const addItem = () => {
     if (!selectedProductId) {
@@ -72,13 +94,14 @@ export default function Transaction() {
       return;
     }
 
-    const harga = Number(hargaJual);
-    if (!harga || harga <= 0) {
+    const isSell = transactionType === "sell";
+    const harga = Number(hargaJual || mod);
+    if (isSell && (!harga || harga <= 0)) {
       setMessage("Harga jual harus lebih dari 0.");
       return;
     }
 
-    if (selectedProduct.product_stock < qty) {
+    if (isSell && selectedProduct.product_stock < qty) {
       setMessage(`Stok ${selectedProduct.product_name} tidak cukup.`);
       return;
     }
@@ -91,6 +114,7 @@ export default function Transaction() {
         quantity: qty,
         modal: mod,
         hargaJual: harga,
+        transactionType: transactionType,
         datetime: datetime || ""
       }
     ]);
@@ -106,6 +130,25 @@ export default function Transaction() {
 
   const removeItem = (index) => {
     setCartItems((current) => current.filter((_, idx) => idx !== index));
+  };
+
+  const getTransactionTypeLabel = (transaction) => {
+    if (!transaction?.TransactionDetails || transaction.TransactionDetails.length === 0) {
+      return transaction.transaction_type ? transaction.transaction_type.toUpperCase() : "-";
+    }
+
+    const uniqueTypes = Array.from(new Set(transaction.TransactionDetails.map((item) => item.transaction_type)));
+    return uniqueTypes.length === 1 ? uniqueTypes[0].toUpperCase() : "MIXED";
+  };
+
+  const openTransactionModal = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowTransactionModal(true);
+  };
+
+  const closeTransactionModal = () => {
+    setSelectedTransaction(null);
+    setShowTransactionModal(false);
   };
 
   const totalAmount = useMemo(() => {
@@ -125,11 +168,13 @@ export default function Transaction() {
 
     try {
       const payload = {
+        transaction_type: transactionType,
         items: cartItems.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
           capital_cost: item.modal,
-          selling_price: item.hargaJual
+          selling_price: item.hargaJual,
+          transaction_type: item.transactionType
         }))
       };
 
@@ -138,7 +183,7 @@ export default function Transaction() {
         body: JSON.stringify(payload)
       });
 
-      setMessage(`Penjualan berhasil. Total: Rp${response.total_belanja}`);
+      setMessage(`Transaksi berhasil. Total: Rp${response.total_belanja}`);
       setCartItems([]);
       fetchProducts();
       fetchHistory();
@@ -168,7 +213,6 @@ export default function Transaction() {
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px", alignItems: "end" }}>
               
-              {/* --- BAGIAN CUSTOM SEARCH DROPDOWN --- */}
               <div style={{ position: "relative" }}>
                 <label style={{ display: "block", marginBottom: "6px" }}>Pilih Produk</label>
                 <input
@@ -180,11 +224,10 @@ export default function Transaction() {
                     setSearchTerm(e.target.value);
                     setIsDropdownOpen(true);
                     if (e.target.value === "") {
-                      setSelectedProductId(""); // Reset ID jika dihapus
+                      setSelectedProductId(""); 
                     }
                   }}
                   onFocus={() => setIsDropdownOpen(true)}
-                  // Gunakan setTimeout agar onClick pada list item sempat dieksekusi sebelum dropdown tertutup
                   onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
                   style={{ width: "100%" }}
                 />
@@ -218,7 +261,7 @@ export default function Transaction() {
                             borderBottom: "1px solid #f3f4f6",
                             backgroundColor: selectedProductId === product.product_id ? "#eef2ff" : "white"
                           }}
-                          onMouseDown={(e) => e.preventDefault()} // Mencegah onBlur input teraplikasi lebih dulu
+                          onMouseDown={(e) => e.preventDefault()} 
                           onClick={() => {
                             setSelectedProductId(product.product_id);
                             setSearchTerm(product.product_name);
@@ -236,27 +279,34 @@ export default function Transaction() {
                   </ul>
                 )}
               </div>
-              {/* -------------------------------------- */}
 
+              <div>
+                <label style={{ display: "block", marginBottom: "6px" }}>Tipe Transaksi</label>
+                <select className="input" value={transactionType} onChange={(e) => setTransactionType(e.target.value)}>
+                  <option value="sell">Penjualan (Sell)</option>
+                  <option value="buy">Restock (Buy)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr auto", gap: "12px", alignItems: "end" }}>
               <div>
                 <label style={{ display: "block", marginBottom: "6px" }}>Quantity</label>
                 <input className="input" type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="Qty" />
               </div>
-            </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.5fr auto", gap: "12px", alignItems: "end" }}>
               <div>
                 <label style={{ display: "block", marginBottom: "6px" }}>Modal</label>
                 <input className="input" type="number" min="0" step="0.01" value={modal} onChange={(e) => setModal(e.target.value)} placeholder="Modal" />
               </div>
 
               <div>
-                <label style={{ display: "block", marginBottom: "6px" }}>Harga Jual</label>
-                <input className="input" type="number" min="0" step="0.01" value={hargaJual} onChange={(e) => setHargaJual(e.target.value)} placeholder="Harga Jual" />
+                <label style={{ display: "block", marginBottom: "6px" }}>{transactionType === "sell" ? "Harga Jual" : "Harga Beli"}</label>
+                <input className="input" type="number" min="0" step="0.01" value={hargaJual} onChange={(e) => setHargaJual(e.target.value)} placeholder={transactionType === "sell" ? "Harga Jual" : "Harga Beli"} />
               </div>
 
               <div>
-                <label style={{ display: "block", marginBottom: "6px" }}>Datetime (opsional)</label>
+                <label style={{ display: "block", marginBottom: "6px" }}>Datetime (ops)</label>
                 <input className="input" type="datetime-local" value={datetime} onChange={(e) => setDatetime(e.target.value)} />
               </div>
 
@@ -279,7 +329,8 @@ export default function Transaction() {
                     <th style={{ padding: "10px" }}>Nama Produk</th>
                     <th style={{ padding: "10px" }}>Quantity</th>
                     <th style={{ padding: "10px" }}>Modal</th>
-                    <th style={{ padding: "10px" }}>Harga Jual</th>
+                    <th style={{ padding: "10px" }}>Harga</th>
+                    <th style={{ padding: "10px" }}>Tipe</th>
                     <th style={{ padding: "10px" }}>Datetime</th>
                     <th style={{ padding: "10px" }}>Subtotal</th>
                     <th style={{ padding: "10px" }}></th>
@@ -293,6 +344,11 @@ export default function Transaction() {
                         <td style={{ padding: "10px" }}>{item.quantity}</td>
                         <td style={{ padding: "10px" }}>Rp{item.modal}</td>
                         <td style={{ padding: "10px" }}>Rp{item.hargaJual}</td>
+                        <td style={{ padding: "10px" }}>
+                          <span className={`badge ${item.transactionType === "buy" ? "safe" : "low"}`} style={{ padding: "2px 8px", fontSize: "12px" }}>
+                            {item.transactionType === "buy" ? "Buy" : "Sell"}
+                          </span>
+                        </td>
                         <td style={{ padding: "10px" }}>{item.datetime ? new Date(item.datetime).toLocaleString() : "-"}</td>
                         <td style={{ padding: "10px" }}>Rp{item.hargaJual * item.quantity}</td>
                         <td style={{ padding: "10px" }}>
@@ -331,7 +387,8 @@ export default function Transaction() {
                   <tr style={{ textAlign: "left", borderBottom: "2px solid #E5E7EB" }}>
                     <th style={{ padding: "10px" }}>Tanggal</th>
                     <th style={{ padding: "10px" }}>Total</th>
-                    <th style={{ padding: "10px" }}>Status</th>
+                    <th style={{ padding: "10px" }}>Tipe</th>
+                    <th style={{ padding: "10px" }}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -339,7 +396,12 @@ export default function Transaction() {
                     <tr key={tx.transaction_id}>
                       <td style={{ padding: "10px" }}>{tx.transaction_datetime ? new Date(tx.transaction_datetime).toLocaleString() : "-"}</td>
                       <td style={{ padding: "10px" }}>Rp{tx.total_amount}</td>
-                      <td style={{ padding: "10px" }}>{tx.status || "-"}</td>
+                      <td style={{ padding: "10px" }}>{getTransactionTypeLabel(tx)}</td>
+                      <td style={{ padding: "10px" }}>
+                        <button className="button" onClick={() => openTransactionModal(tx)}>
+                          Detail
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -347,6 +409,53 @@ export default function Transaction() {
             </div>
           )}
         </div>
+
+        {showTransactionModal && selectedTransaction && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
+            <div style={{ width: "min(95%, 780px)", background: "white", borderRadius: "16px", padding: "24px", boxShadow: "0 16px 40px rgba(0,0,0,0.15)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
+                <div>
+                  <h3>Detail Transaksi</h3>
+                  <p style={{ margin: 0, color: "#6B7280" }}>{selectedTransaction.transaction_datetime ? new Date(selectedTransaction.transaction_datetime).toLocaleString() : "-"}</p>
+                </div>
+                <button className="button" onClick={closeTransactionModal} style={{ background: "#EF4444", color: "white" }}>
+                  Tutup
+                </button>
+              </div>
+
+              <div style={{ marginBottom: "16px" }}>
+                <strong>Total:</strong> Rp{selectedTransaction.total_amount} • <strong>Tipe:</strong> {getTransactionTypeLabel(selectedTransaction)}
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ textAlign: "left", borderBottom: "2px solid #E5E7EB" }}>
+                      <th style={{ padding: "10px" }}>Produk</th>
+                      <th style={{ padding: "10px" }}>Tipe</th>
+                      <th style={{ padding: "10px" }}>Qty</th>
+                      <th style={{ padding: "10px" }}>Modal</th>
+                      <th style={{ padding: "10px" }}>Harga</th>
+                      <th style={{ padding: "10px" }}>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedTransaction.TransactionDetails?.map((item) => (
+                      <tr key={`${item.detail_id}-${item.product_id_fk}`}>
+                        <td style={{ padding: "10px" }}>{item.Product?.product_name || "-"}</td>
+                        <td style={{ padding: "10px" }}>{item.transaction_type?.toUpperCase() || "-"}</td>
+                        <td style={{ padding: "10px" }}>{item.quantity}</td>
+                        <td style={{ padding: "10px" }}>Rp{item.capital_cost}</td>
+                        <td style={{ padding: "10px" }}>Rp{item.selling_price}</td>
+                        <td style={{ padding: "10px" }}>Rp{item.sub_total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
   );
 }

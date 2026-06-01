@@ -12,6 +12,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER, 
       defaultValue: 0
     },
+    transaction_type: {
+      type: DataTypes.ENUM('buy', 'sell'),
+      defaultValue: 'sell',
+      allowNull: false
+    },
     transaction_datetime: {
       type: DataTypes.DATE, 
       defaultValue: DataTypes.NOW

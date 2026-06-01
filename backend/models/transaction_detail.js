@@ -20,6 +20,11 @@ module.exports = (sequelize, DataTypes) => {
     selling_price: {
       type: DataTypes.INTEGER
     },
+    transaction_type: {
+      type: DataTypes.ENUM('buy', 'sell'),
+      defaultValue: 'sell',
+      allowNull: false
+    },
     sub_total: {
       type: DataTypes.INTEGER
     }
