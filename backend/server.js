@@ -68,8 +68,9 @@ app.get('/', (req, res) => {
 // ===== PENANGANAN ERROR =====
 
 // Penanganan Rute Tidak Ditemukan (404 Handler)
+// SECURITY FIX (B-S02): Tidak lagi menampilkan req.originalUrl ke client (information disclosure)
 app.use((req, res) => {
-    res.status(404).json({ message: `Rute ${req.originalUrl} tidak ditemukan pada server ini.` });
+    res.status(404).json({ message: "Endpoint yang Anda akses tidak tersedia." });
 });
 
 // Penanganan Kesalahan Global (500 Handler) — Sentral & Aman
@@ -96,11 +97,38 @@ const PORT = process.env.PORT || 5000;
 sequelize.authenticate()
     .then(() => {
         console.log('Koneksi ke basis data MySQL (Sequelize) berhasil didirikan.');
-        app.listen(PORT, () => {
+        const server = app.listen(PORT, () => {
             console.log(`Server Node.js berjalan pada port ${PORT}`);
             console.log(`Helmet aktif | CORS dibatasi ke: ${CORS_ORIGIN}`);
             console.log(`Rate limiter aktif | Body limit: ${BODY_SIZE_LIMIT}`);
         });
+
+        // PERFORMANCE FIX (B-S01): Graceful Shutdown
+        // Memastikan koneksi DB ditutup dengan benar saat server dimatikan
+        const gracefulShutdown = (signal) => {
+            console.log(`\n⚠️  Sinyal ${signal} diterima. Memulai graceful shutdown...`);
+            server.close(() => {
+                console.log('✅ Server HTTP ditutup.');
+                sequelize.close()
+                    .then(() => {
+                        console.log('✅ Koneksi database ditutup.');
+                        process.exit(0);
+                    })
+                    .catch((err) => {
+                        console.error('❌ Gagal menutup koneksi database:', err);
+                        process.exit(1);
+                    });
+            });
+
+            // Force shutdown setelah 10 detik jika graceful gagal
+            setTimeout(() => {
+                console.error('❌ Graceful shutdown timeout. Force exit.');
+                process.exit(1);
+            }, 10000);
+        };
+
+        process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+        process.on('SIGINT', () => gracefulShutdown('SIGINT'));
     })
     .catch((err) => {
         console.error('Gagal terhubung ke basis data:', err);

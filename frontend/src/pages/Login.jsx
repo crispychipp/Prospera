@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { API_BASE_URL, setAuthSession, getToken, getUserRole } from "../utils/api";
+import { apiFetch, setAuthSession, getToken, getUserRole, formatError } from "../utils/api";
 
 // Regex standar industri — SELARAS dengan backend validationMiddleware.js
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -46,44 +46,33 @@ export default function Login() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      const data = await apiFetch("/auth/login", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ email: email.trim().toLowerCase(), password })
       });
 
-      // HANDLER: Rate Limit (429)
-      if (res.status === 429) {
-        const data = await res.json().catch(() => ({}));
-        setMessage(data.message || "Terlalu banyak percobaan login. Silakan coba lagi setelah 15 menit.");
+      // Verifikasi apakah role yang didapat sesuai dengan tab yang dipilih
+      if (data.user.role !== activeTab) {
+        const tabLabel = activeTab === 'owner' ? 'Owner' : 'Karyawan';
+        const roleLabel = data.user.role === 'owner' ? 'Owner' : 'Karyawan';
+        setMessage(`Email ini terdaftar sebagai ${roleLabel}, bukan ${tabLabel}. Silakan pindah tab.`);
         return;
       }
 
-      if (res.ok) {
-        const data = await res.json();
-        
-        // Verifikasi apakah role yang didapat sesuai dengan tab yang dipilih
-        if (data.user.role !== activeTab) {
-          const tabLabel = activeTab === 'owner' ? 'Owner' : 'Karyawan';
-          const roleLabel = data.user.role === 'owner' ? 'Owner' : 'Karyawan';
-          setMessage(`Email ini terdaftar sebagai ${roleLabel}, bukan ${tabLabel}. Silakan pindah tab.`);
-          return;
-        }
+      setAuthSession(data.token, data.user);
 
-        setAuthSession(data.token, data.user);
-
-        // RBAC: Redirect berdasarkan role
-        if (data.user.role === 'karyawan') {
-          nav("/transaction");  // Karyawan langsung ke halaman transaksi
-        } else {
-          nav("/dashboard");    // Owner ke dashboard analitik
-        }
+      // RBAC: Redirect berdasarkan role
+      if (data.user.role === 'karyawan') {
+        nav("/transaction");
       } else {
-        setMessage("Email atau Password yang Anda masukkan salah.");
+        nav("/dashboard");
       }
     } catch (err) {
-      console.error("[Login Error]:", err);
-      setMessage("Terjadi kesalahan koneksi ke server.");
+      // apiFetch melempar ApiError dengan pesan Indonesia; fallback untuk error lain
+      const msg = err.message?.includes('Sesi Anda') 
+        ? "Email atau Password yang Anda masukkan salah." 
+        : formatError(err);
+      setMessage(msg);
     } finally {
       setIsSubmitting(false);
     }

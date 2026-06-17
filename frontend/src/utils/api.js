@@ -62,8 +62,15 @@ export const clearAuthSession = () => {
 
 /**
  * Memeriksa apakah token JWT masih valid (belum expired).
- * Decode payload tanpa verifikasi signature (itu tugas backend).
- * @returns {boolean}
+ * 
+ * PENTING (F-T08): Ini adalah CLIENT-SIDE FAST-FAIL CHECK saja.
+ * Fungsi ini BUKAN pengganti validasi keamanan di server.
+ * - Tujuan: Mencegah API call yang pasti gagal (token expired/corrupt).
+ * - Keamanan sebenarnya: Backend middleware (verifyToken + authorizeRole).
+ * - Role/otorisasi: TIDAK pernah diandalkan dari decode JWT di client.
+ *   Role dibaca dari localStorage (yang di-set saat login dari respons server).
+ * 
+ * @returns {boolean} true jika token ada, formatnya valid, dan belum expired
  */
 export const isTokenValid = () => {
     const token = getToken();

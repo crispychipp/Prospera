@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { API_BASE_URL } from "../utils/api";
+import { apiFetch, formatError } from "../utils/api";
 
 // Regex standar industri — SELARAS dengan backend validationMiddleware.js
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -36,9 +36,8 @@ export default function Register() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      await apiFetch("/auth/register", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ 
           username: username.trim(), 
           email: email.trim().toLowerCase(), 
@@ -46,23 +45,10 @@ export default function Register() {
         })
       });
 
-      // HANDLER: Rate Limit (429)
-      if (res.status === 429) {
-        const data = await res.json().catch(() => ({}));
-        setMessage(data.message || "Terlalu banyak percobaan pendaftaran. Silakan coba lagi nanti.");
-        return;
-      }
-
-      if (res.ok) {
-        // Redirect ke halaman login dengan status berhasil
-        nav("/login", { state: { successMessage: "Pendaftaran berhasil! Silakan login untuk masuk ke toko Anda." } });
-      } else {
-        const data = await res.json();
-        setMessage(data.message || "Pendaftaran gagal. Silakan coba lagi.");
-      }
+      // Redirect ke halaman login dengan status berhasil
+      nav("/login", { state: { successMessage: "Pendaftaran berhasil! Silakan login untuk masuk ke toko Anda." } });
     } catch (err) {
-      console.error("[Register Error]:", err);
-      setMessage("Terjadi kesalahan koneksi ke server.");
+      setMessage(formatError(err));
     } finally {
       setIsSubmitting(false);
     }

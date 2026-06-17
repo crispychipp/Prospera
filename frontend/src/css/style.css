@@ -1,45 +1,22 @@
-:root {
-    --blue-primary: #1E3A8A;
-    --blue-medium: #2563EB;
-    --blue-light: #3B82F6;
-    --green-primary: #22C55E;
-    --green-medium: #16A34A;
-    --background: #F8FAFC;
-    --card: #F5F5F5;
-    --text-primary: #1F2937;
-    --text-secondary: #6B7280;
-    --border: #E5E7EB;
-}
+/**
+ * style.css — Aturan CSS TAMBAHAN (non-duplikat)
+ * REFACTOR (F-T10): Dibersihkan dari duplikasi dengan index.css.
+ * 
+ * File ini HANYA berisi aturan yang TIDAK ada di index.css:
+ * - .logo (branding sidebar)
+ * - .nav-button (tombol navigasi)
+ * - .nav-pills (tab pills di main content)
+ * - .table-simple (tabel khusus dashboard)
+ * - .alert-item (item notifikasi stok)
+ * - .bi-card (kartu analytics dengan border-top)
+ * 
+ * Aturan yang SUDAH DIPINDAHKAN ke index.css (dihapus dari sini):
+ * - :root, body, .sidebar, .sidebar .nav-link, .main-content
+ * - .card, .clean-card, .stat-card, .simple-card
+ * - .chart-area, .chart-container, @media responsive
+ */
 
-body {
-    margin: 0;
-    background-color: var(--background);
-    color: var(--text-primary);
-    overflow-x: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-.sidebar {
-    width: 260px;
-    background: linear-gradient(180deg, var(--blue-primary) 0%, var(--green-medium) 100%);
-    color: white;
-    min-height: 100vh;
-    position: fixed;
-    left: 0;
-    top: 0;
-    z-index: 1000;
-    padding: 2rem 1.5rem;
-}
-
-.main-content {
-    margin-left: 260px;
-    padding: 2rem;
-    min-height: 100vh;
-}
-
+/* LOGO */
 .logo {
     font-size: 1.5rem;
     font-weight: 700;
@@ -49,18 +26,7 @@ body {
     gap: 10px;
 }
 
-.sidebar .nav-link {
-    color: rgba(255, 255, 255, 0.7) !important;
-    border-radius: 8px;
-    margin-bottom: 0.5rem;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0.8rem 1rem;
-    text-decoration: none;
-}
-
+/* NAV BUTTON (sidebar action buttons) */
 .nav-button {
     width: 100%;
     border: 0;
@@ -68,12 +34,7 @@ body {
     text-align: left;
 }
 
-.sidebar .nav-link:hover,
-.sidebar .nav-link.active {
-    background-color: rgba(255, 255, 255, 0.2) !important;
-    color: white !important;
-}
-
+/* NAV PILLS (tabs di main content — Dashboard, Analytics) */
 .main-content .nav-pills .nav-link {
     color: var(--text-secondary) !important;
     border: 0;
@@ -96,39 +57,7 @@ body {
     color: white !important;
 }
 
-.clean-card {
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: white;
-    padding: 24px;
-    margin-bottom: 24px;
-}
-
-.simple-card {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: white;
-    padding: 20px;
-    height: auto;
-}
-
-.stat-card {
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    background: white;
-    height: 100%;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-}
-
-.bi-card {
-    border-top: 4px solid var(--blue-medium);
-}
-
-.card {
-    background-color: white !important;
-}
-
+/* TABLE SIMPLE (Dashboard overview table) */
 .table-simple thead th {
     background: #f8fafc;
     color: #64748b;
@@ -144,6 +73,7 @@ body {
     padding: 16px 12px;
 }
 
+/* ALERT ITEM (notifikasi low stock) */
 .alert-item {
     padding: 10px;
     border-bottom: 1px solid #eee;
@@ -153,28 +83,7 @@ body {
     border-bottom: none;
 }
 
-.chart-area {
-    height: 400px;
-}
-
-.chart-container {
-    position: relative;
-    height: 350px;
-}
-
-@media (max-width: 992px) {
-    .sidebar {
-        width: 84px;
-        padding: 2rem 0.5rem;
-    }
-
-    .sidebar .nav-text,
-    .sidebar .logo span {
-        display: none;
-    }
-
-    .main-content {
-        margin-left: 84px;
-        padding: 1.5rem;
-    }
+/* BI CARD (kartu analytics dengan aksen border atas) */
+.bi-card {
+    border-top: 4px solid var(--blue-medium);
 }

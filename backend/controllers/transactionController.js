@@ -81,36 +81,36 @@ const createTransaction = async (req, res, next) => {
             { transaction: t }
         );
 
-        // Tahap 4: Memasukkan rincian barang ke Transaction_details dan menyesuaikan stok
-        for (let vItem of validItems) {
-            await TransactionDetail.create(
-                {
-                    transaction_id_fk: newTransaction.transaction_id,
-                    product_id_fk: vItem.product_id,
-                    quantity: vItem.quantity,
-                    capital_cost: vItem.capital_cost,
-                    selling_price: vItem.selling_price,
-                    sub_total: vItem.sub_total,
-                    transaction_type: vItem.transaction_type
-                },
-                { transaction: t }
-            );
+        // Tahap 4: Batch-insert rincian barang (PERFORMANCE FIX B-S09: mengganti N create → 1 bulkCreate)
+        const detailRecords = validItems.map(vItem => ({
+            transaction_id_fk: newTransaction.transaction_id,
+            product_id_fk: vItem.product_id,
+            quantity: vItem.quantity,
+            capital_cost: vItem.capital_cost,
+            selling_price: vItem.selling_price,
+            sub_total: vItem.sub_total,
+            transaction_type: vItem.transaction_type
+        }));
 
-            // Menyesuaikan jumlah stok produk berdasarkan jenis transaksi
+        await TransactionDetail.bulkCreate(detailRecords, { transaction: t });
+
+        // Tahap 5: Update stok produk (tetap per-item karena row-level lock diperlukan)
+        // PERFORMANCE FIX (B-S10): Menggunakan Promise.all untuk paralelisasi
+        await Promise.all(validItems.map(vItem => {
             if (vItem.transaction_type === 'sell') {
-                await Product.decrement('product_stock', {
+                return Product.decrement('product_stock', {
                     by: vItem.quantity,
                     where: { product_id: vItem.product_id },
                     transaction: t
                 });
             } else {
-                await Product.increment('product_stock', {
+                return Product.increment('product_stock', {
                     by: vItem.quantity,
                     where: { product_id: vItem.product_id },
                     transaction: t
                 });
             }
-        }
+        }));
 
         // Menyimpan seluruh perubahan secara permanen ke basis data jika tidak ada kesalahan
         await t.commit();

@@ -7,6 +7,10 @@
 // Regex standar industri untuk validasi format email
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
+// Batas maksimum integer untuk kolom MySQL INT (mencegah overflow)
+// Nilai realistis bisnis: di bawah 1 miliar
+const MAX_INTEGER = 999_999_999;
+
 /**
  * Validasi input untuk registrasi pengguna baru
  */
@@ -110,6 +114,9 @@ const validateProduct = (req, res, next) => {
     if (isNaN(Number(product_cost)) || Number(product_cost) < 0) {
         return res.status(400).json({ message: "Harga modal harus berupa angka non-negatif." });
     }
+    if (Number(product_cost) > MAX_INTEGER) {
+        return res.status(400).json({ message: `Harga modal maksimal ${MAX_INTEGER.toLocaleString('id-ID')}.` });
+    }
 
     // Validasi harga jual
     if (product_price === undefined || product_price === null || product_price === '') {
@@ -117,6 +124,9 @@ const validateProduct = (req, res, next) => {
     }
     if (isNaN(Number(product_price)) || Number(product_price) < 0) {
         return res.status(400).json({ message: "Harga jual harus berupa angka non-negatif." });
+    }
+    if (Number(product_price) > MAX_INTEGER) {
+        return res.status(400).json({ message: `Harga jual maksimal ${MAX_INTEGER.toLocaleString('id-ID')}.` });
     }
 
     // Validasi stok (opsional, default 0)
@@ -126,6 +136,9 @@ const validateProduct = (req, res, next) => {
         }
         if (!Number.isInteger(Number(product_stock))) {
             return res.status(400).json({ message: "Stok harus berupa bilangan bulat." });
+        }
+        if (Number(product_stock) > MAX_INTEGER) {
+            return res.status(400).json({ message: `Stok maksimal ${MAX_INTEGER.toLocaleString('id-ID')}.` });
         }
     }
 
@@ -169,6 +182,9 @@ const validateTransaction = (req, res, next) => {
         if (!item.quantity || !Number.isInteger(Number(item.quantity)) || Number(item.quantity) <= 0) {
             return res.status(400).json({ message: `Item ke-${i + 1}: quantity harus berupa bilangan bulat positif (> 0).` });
         }
+        if (Number(item.quantity) > MAX_INTEGER) {
+            return res.status(400).json({ message: `Item ke-${i + 1}: quantity maksimal ${MAX_INTEGER.toLocaleString('id-ID')}.` });
+        }
 
         // transaction_type per item (jika ada) harus valid
         if (item.transaction_type && !['sell', 'buy'].includes(item.transaction_type)) {
@@ -180,10 +196,16 @@ const validateTransaction = (req, res, next) => {
             if (isNaN(Number(item.capital_cost)) || Number(item.capital_cost) < 0) {
                 return res.status(400).json({ message: `Item ke-${i + 1}: harga modal harus berupa angka non-negatif.` });
             }
+            if (Number(item.capital_cost) > MAX_INTEGER) {
+                return res.status(400).json({ message: `Item ke-${i + 1}: harga modal maksimal ${MAX_INTEGER.toLocaleString('id-ID')}.` });
+            }
         }
         if (item.selling_price !== undefined && item.selling_price !== null) {
             if (isNaN(Number(item.selling_price)) || Number(item.selling_price) < 0) {
                 return res.status(400).json({ message: `Item ke-${i + 1}: harga jual harus berupa angka non-negatif.` });
+            }
+            if (Number(item.selling_price) > MAX_INTEGER) {
+                return res.status(400).json({ message: `Item ke-${i + 1}: harga jual maksimal ${MAX_INTEGER.toLocaleString('id-ID')}.` });
             }
         }
 
