@@ -1,4 +1,5 @@
 const { Product, Category } = require('../models');
+const { Op } = require('sequelize');
 const { getStockStatus } = require('../utils/stockHelper');
 
 // Mengambil seluruh data produk berdasarkan ID pengguna yang sedang masuk.
@@ -71,6 +72,13 @@ const createProduct = async (req, res, next) => {
         const userId = req.user.store_id; 
         const { product_name, product_cost, product_price, product_stock, category_id_fk, expired_date } = req.body;
         
+        if (Number(product_cost) < 500 || Number(product_price) < 500) {
+            return res.status(400).json({ message: "Harga modal dan harga jual minimal Rp 500." });
+        }
+        if (Number(product_stock) < 0) {
+            return res.status(400).json({ message: "Stok tidak boleh negatif." });
+        }
+
         // Cek duplikasi nama produk (logika bisnis, tetap di controller)
         const existingProduct = await Product.findOne({
             where: {
@@ -109,15 +117,23 @@ const updateProduct = async (req, res, next) => {
         const productId = req.params.id;
         const { product_name, product_cost, product_price, product_stock, category_id_fk, expired_date } = req.body;
 
-        // Cek duplikasi nama produk (logika bisnis, tetap di controller)
+        if (Number(product_cost) < 500 || Number(product_price) < 500) {
+            return res.status(400).json({ message: "Harga modal dan harga jual minimal Rp 500." });
+        }
+        if (Number(product_stock) < 0) {
+            return res.status(400).json({ message: "Stok tidak boleh negatif." });
+        }
+
+        // Cek duplikasi nama produk dengan mengecualikan produk ini sendiri
         const duplicateProduct = await Product.findOne({
             where: {
                 user_id_fk: userId,
-                product_name: product_name
+                product_name: req.body.product_name,
+                product_id: { [Op.ne]: req.params.id }
             }
         });
 
-        if (duplicateProduct && String(duplicateProduct.product_id) !== String(productId)) {
+        if (duplicateProduct) {
             return res.status(400).json({ message: `Nama "${product_name}" sudah digunakan oleh produk lain di toko Anda.` });
         }
 

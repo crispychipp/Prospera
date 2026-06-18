@@ -35,7 +35,12 @@ export default function TransactionDetailModal({
             <tbody>
               {selectedTransaction.TransactionDetails?.map((item) => (
                 <tr key={item.detail_id}>
-                  <td>{item.Product?.product_name || "-"}</td>
+                  <td>
+                    <div>{item.Product?.product_name || "-"}</div>
+                    {item.Product?.Category && (
+                      <small style={{ color: "#6B7280" }}>{item.Product.Category.category_name}</small>
+                    )}
+                  </td>
                   <td>
                       <span className={item.transaction_type?.toUpperCase() === "SELL" ? "badge safe" : "badge low"}>
                         {item.transaction_type?.toUpperCase() === "SELL" ? "Jual" : "Beli"}

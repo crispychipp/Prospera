@@ -53,11 +53,15 @@ export default function ProductForm({ selectedProduct, initialData, onSave, onCa
         setFormMessage("");
 
         if (name.trim() === "" || cost === "" || price === "" || stock === "") {
-            setFormMessage("Semua field harus diisi (angka 0 diperbolehkan).");
+            setFormMessage("Semua field harus diisi.");
             return;
         }
-        if (Number(cost) < 0 || Number(price) < 0 || Number(stock) < 0) {
-            setFormMessage("Harga dan stok tidak boleh negatif.");
+        if (Number(cost) < 500 || Number(price) < 500) {
+            setFormMessage("Harga modal dan harga jual minimal Rp 500.");
+            return;
+        }
+        if (Number(stock) < 0) {
+            setFormMessage("Stok tidak boleh negatif.");
             return;
         }
         if (!Number.isInteger(Number(stock))) {

@@ -1,4 +1,4 @@
-const { sequelize, Transaction, TransactionDetail, Product } = require('../models');
+const { sequelize, Transaction, TransactionDetail, Product, Category } = require('../models');
 const { Op } = require('sequelize'); 
 
 // 1. Fungsi untuk melakukan proses pembayaran (Dilengkapi Sistem Rollback)
@@ -169,7 +169,8 @@ const getTransactionHistory = async (req, res, next) => {
                         {
                             model: Product,
                             attributes: ['product_name'],
-                            paranoid: false // Pastikan produk yang sudah di-soft-delete tetap muncul di riwayat transaksi
+                            paranoid: false, // Pastikan produk yang sudah di-soft-delete tetap muncul di riwayat transaksi
+                            include: [Category]
                         }
                     ]
                 }
