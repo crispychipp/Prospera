@@ -167,7 +167,7 @@ function SmartExpiryWidget({ isDashboard = false }) {
 
     const cardContent = (
         <div 
-            className={`card shadow-sm rounded-4 p-3 mb-3 d-flex flex-row justify-content-between align-items-center card-hover-effect ${totalAlerts === 0 ? 'border border-2 border-success' : 'border-0'}`} 
+            className={`card shadow-sm rounded-4 p-3 mb-3 d-flex flex-row justify-content-between align-items-center card-hover-effect border-0`} 
             style={{ cursor: 'pointer' }}
             {...(!isDashboard ? { 'data-bs-toggle': 'modal', 'data-bs-target': '#ExpiryModal' } : {})}
         >

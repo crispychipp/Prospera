@@ -258,17 +258,17 @@ const getLossProducts = async (req, res, next) => {
 
         const rows = await TransactionDetail.findAll({
             attributes: [
-                [fn("SUM", col("quantity")), "sold"],
-                [fn("MAX", col("capital_cost")), "modal"], 
-                [fn("MAX", col("selling_price")), "harga_jual"], 
-                [literal("SUM((capital_cost - selling_price) * quantity)"), "rugi"]
+                [literal("SUM(CASE WHEN selling_price < capital_cost THEN quantity ELSE 0 END)"), "sold"],
+                [literal("SUM(CASE WHEN selling_price < capital_cost THEN capital_cost * quantity ELSE 0 END) / SUM(CASE WHEN selling_price < capital_cost THEN quantity ELSE 0 END)"), "modal"], 
+                [literal("SUM(CASE WHEN selling_price < capital_cost THEN selling_price * quantity ELSE 0 END) / SUM(CASE WHEN selling_price < capital_cost THEN quantity ELSE 0 END)"), "harga_jual"], 
+                [literal("SUM(CASE WHEN selling_price < capital_cost THEN (capital_cost - selling_price) * quantity ELSE 0 END)"), "rugi"]
             ],
             include: [
                 { model: Product, attributes: ["product_name"], required: true, paranoid: false },
                 { model: Transaction, attributes: [], where: { ...getDateFilter(startDate, endDate), user_id_fk: userId, status: 'success' } }
             ],
-            where: { transaction_type: 'sell', ...Object.fromEntries([]) },
-            having: literal('SUM((capital_cost - selling_price) * quantity) > 0'),
+            where: { transaction_type: 'sell' },
+            having: literal('SUM(CASE WHEN selling_price < capital_cost THEN (capital_cost - selling_price) * quantity ELSE 0 END) > 0'),
             group: ["Product.product_id", "Product.product_name"],
             order: [[literal("rugi"), "DESC"]],
             limit: sanitizeLimit(limit),

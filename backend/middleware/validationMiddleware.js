@@ -151,6 +151,11 @@ const validateProduct = (req, res, next) => {
         return res.status(400).json({ message: `Harga jual maksimal ${MAX_INTEGER.toLocaleString('id-ID')}.` });
     }
 
+    // ENTERPRISE FIX: Blokir jual rugi di form biasa
+    if (Number(product_price) < Number(product_cost)) {
+        return res.status(400).json({ message: 'Operasi ditolak: Harga jual tidak boleh di bawah harga modal.' });
+    }
+
     // Validasi stok (opsional, default 0)
     if (product_stock !== undefined && product_stock !== null && product_stock !== '') {
         if (isNaN(Number(product_stock)) || Number(product_stock) < 0) {
