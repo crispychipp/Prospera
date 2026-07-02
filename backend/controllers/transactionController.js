@@ -444,7 +444,7 @@ const exportTransactionHistory = async (req, res, next) => {
         while (hasMore) {
             const transactions = await Transaction.findAll({
                 where: whereCondition,
-                order: [['transaction_datetime', 'ASC']],
+                order: [['transaction_datetime', 'DESC'], ['transaction_id', 'DESC']],
                 limit: batchSize,
                 offset: offset,
                 include: [
