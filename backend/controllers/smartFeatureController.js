@@ -227,7 +227,7 @@ exports.getAnomalies = async (req, res) => {
                     total_amount: trx.total_amount,
                     products: products,
                     cashier: trx.Cashier ? trx.Cashier.username : 'Unknown',
-                    time: moment.tz(trx.transaction_datetime, 'YYYY-MM-DD HH:mm:ss', 'Asia/Jakarta').format('HH:mm:ss'),
+                    time: moment.utc(trx.transaction_datetime).format('HH:mm:ss'),
                     reason: ticket.description,
                     status: ticket.status,
                     resolution_note: ticket.resolution_note,

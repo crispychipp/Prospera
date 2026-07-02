@@ -483,7 +483,7 @@ const exportTransactionHistory = async (req, res, next) => {
                 // SESUDAH   : moment.tz(value, 'YYYY-MM-DD HH:mm:ss', 'Asia/Jakarta') menangani string 
                 //             WIB dari DB dengan benar, mencegah pergeseran 7 jam ganda di server Railway.
                 const dateStr = tx.transaction_datetime
-                    ? moment.tz(tx.transaction_datetime, 'YYYY-MM-DD HH:mm:ss', 'Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss')
+                    ? moment.utc(tx.transaction_datetime).format('DD/MM/YYYY HH:mm:ss')
                     : '-';
                 
                 const typeStr = tx.transaction_type === 'sell' ? 'Penjualan' : 'Restock';
