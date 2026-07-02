@@ -265,7 +265,7 @@ const getTransactionHistory = async (req, res, next) => {
             where: whereCondition, 
             limit: limit,
             offset: offset,
-            order: [['transaction_id', 'DESC']],
+            order: [['transaction_datetime', 'DESC'], ['transaction_id', 'DESC']],
             include: [
                 {
                     model: TransactionDetail,
