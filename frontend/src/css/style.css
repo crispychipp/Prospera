@@ -1,0 +1,94 @@
+/**
+ * style.css — Aturan CSS TAMBAHAN (non-duplikat)
+ * REFACTOR (F-T10): Dibersihkan dari duplikasi dengan index.css.
+ * 
+ * File ini HANYA berisi aturan yang TIDAK ada di index.css:
+ * - .logo (branding sidebar)
+ * - .nav-button (tombol navigasi)
+ * - .nav-pills (tab pills di main content)
+ * - .table-simple (tabel khusus dashboard)
+ * - .alert-item (item notifikasi stok)
+ * - .bi-card (kartu analytics dengan border-top)
+ * 
+ * Aturan yang SUDAH DIPINDAHKAN ke index.css (dihapus dari sini):
+ * - :root, body, .sidebar, .sidebar .nav-link, .main-content
+ * - .card, .clean-card, .stat-card, .simple-card
+ * - .chart-area, .chart-container, @media responsive
+ */
+
+/* LOGO */
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* NAV BUTTON (sidebar action buttons) */
+.nav-button {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+}
+
+/* NAV PILLS (tabs di main content — Dashboard, Analytics) */
+.main-content .nav-pills .nav-link {
+    color: var(--text-secondary) !important;
+    border: 0;
+    border-radius: 8px;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0.65rem 1rem;
+    font-weight: 600;
+}
+
+.main-content .nav-pills .nav-link:hover {
+    background-color: #eef2ff !important;
+    color: var(--blue-medium) !important;
+}
+
+.main-content .nav-pills .nav-link.active {
+    background-color: var(--blue-medium) !important;
+    color: white !important;
+}
+
+/* TABLE SIMPLE (Dashboard overview table) */
+.table-simple thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.025em;
+    border: none;
+}
+
+html[data-bs-theme="dark"] .table-simple thead th {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
+}
+
+.table-simple td {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 16px 12px;
+}
+
+/* ALERT ITEM (notifikasi low stock) */
+.alert-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.alert-item:last-child {
+    border-bottom: none;
+}
+
+/* BI CARD (kartu analytics dengan aksen border atas) */
+.bi-card {
+    border-top: 4px solid var(--blue-medium);
+}
