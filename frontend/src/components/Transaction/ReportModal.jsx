@@ -8,6 +8,7 @@ export default function ReportModal({ isOpen, onClose, onExport, onExportCsv }) 
     const [endDate, setEndDate] = useState('');
     const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [exportingType, setExportingType] = useState(null);
     const [error, setError] = useState('');
 
     // FIX (BUG-06): Ekstrak kalkulasi tanggal dari 3 fungsi duplikat menjadi 1 fungsi terpusat.
@@ -71,16 +72,28 @@ export default function ReportModal({ isOpen, onClose, onExport, onExportCsv }) 
         }
     };
 
-    const handleExportClick = (e) => {
+    const handleExportClick = async (e) => {
         if (e && e.preventDefault) e.preventDefault();
-        const { start, end } = resolveReportDates();
-        onExport(start, end);
+        if (exportingType !== null) return;
+        setExportingType('excel');
+        try {
+            const { start, end } = resolveReportDates();
+            await onExport(start, end);
+        } finally {
+            setExportingType(null);
+        }
     };
 
-    const handleExportCsvClick = (e) => {
+    const handleExportCsvClick = async (e) => {
         if (e && e.preventDefault) e.preventDefault();
-        const { start, end } = resolveReportDates();
-        onExportCsv(start, end);
+        if (exportingType !== null) return;
+        setExportingType('csv');
+        try {
+            const { start, end } = resolveReportDates();
+            await onExportCsv(start, end);
+        } finally {
+            setExportingType(null);
+        }
     };
 
     if (!isOpen) return null;
@@ -164,6 +177,7 @@ export default function ReportModal({ isOpen, onClose, onExport, onExportCsv }) 
                             type="button"
                             onClick={handleExportClick}
                             className="button"
+                            disabled={exportingType !== null}
                             style={{ 
                                 background: "rgba(16, 185, 129, 0.1)", color: "#10B981", border: "1px solid rgba(16, 185, 129, 0.2)", 
                                 display: "flex", alignItems: "center", justifyContent: "center", 
@@ -172,13 +186,14 @@ export default function ReportModal({ isOpen, onClose, onExport, onExportCsv }) 
                                 width: "100%", fontSize: "16px"
                             }}
                         >
-                            <i className="fas fa-file-excel"></i> Export Laporan ke Excel
+                            <i className="fas fa-file-excel"></i> {exportingType === 'excel' ? 'Memproses...' : 'Export Laporan ke Excel'}
                         </button>
                         
                         <button 
                             type="button"
                             onClick={handleExportCsvClick}
                             className="button"
+                            disabled={exportingType !== null}
                             style={{ 
                                 background: "rgba(59, 130, 246, 0.1)", color: "#3B82F6", border: "1px solid rgba(59, 130, 246, 0.2)", 
                                 display: "flex", alignItems: "center", justifyContent: "center", 
@@ -187,7 +202,7 @@ export default function ReportModal({ isOpen, onClose, onExport, onExportCsv }) 
                                 width: "100%", fontSize: "16px"
                             }}
                         >
-                            <i className="fas fa-file-csv"></i> Export Laporan ke CSV
+                            <i className="fas fa-file-csv"></i> {exportingType === 'csv' ? 'Memproses...' : 'Export Laporan ke CSV'}
                         </button>
                     </div>
                 </div>

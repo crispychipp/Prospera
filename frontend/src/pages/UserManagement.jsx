@@ -48,6 +48,7 @@ export default function UserManagement() {
     useEffect(() => { fetchUsers(); }, []);
 
     const handleCreateUser = async () => {
+        if (isSubmitting) return;
         // Validasi client-side
         if (!username.trim()) {
             showToast("Username wajib diisi.", 'warning');
@@ -111,6 +112,7 @@ export default function UserManagement() {
     };
 
     const handleSaveEdit = async () => {
+        if (isSubmitting) return;
         if (!editUsername.trim() || !editEmail.trim() || !EMAIL_REGEX.test(editEmail.trim())) {
             showToast("Data tidak valid. Periksa kembali input Anda.", "warning");
             return;
@@ -145,6 +147,7 @@ export default function UserManagement() {
     };
 
     const handleSaveResetPassword = async () => {
+        if (isSubmitting) return;
         if (!resetPasswordValue || resetPasswordValue.length < 6) {
             showToast("Password minimal 6 karakter.", "warning");
             return;

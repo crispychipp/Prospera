@@ -69,6 +69,8 @@ export default function ProductForm({ selectedProduct, initialData, onSave, onCa
     }, [initialData, selectedProduct, setValue, reset]);
 
     const onSubmit = async (data) => {
+        if (isSubmitting) return;
+
         // Manual validation for expired_date dependency
         const selectedCategory = categories.find(cat => String(cat.category_id) === String(data.category_id_fk));
         if (selectedCategory && selectedCategory.requires_expired_date && !data.expired_date) {

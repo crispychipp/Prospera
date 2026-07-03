@@ -154,6 +154,8 @@ export function useCart(products, fetchProducts, fetchHistory) {
     };
 
     const saveTransaction = async () => {
+        if (saving) return;
+
         if (cartItems.length === 0) {
             setMessage("Keranjang masih kosong. Yuk, tambahkan produk dulu sebelum menyimpan transaksi!");
             setMessageType("warning");
