@@ -139,14 +139,16 @@ function Sidebar() {
                         <i className={getThemeIcon()} />
                         <span className="nav-text">{getThemeText()}</span>
                     </button>
-                    <button 
-                        onClick={replayTour}
-                        className="nav-link w-100 border-0 bg-transparent text-start mb-2"
-                        style={{ cursor: 'pointer' }}
-                    >
-                        <i className="fas fa-play-circle" />
-                        <span className="nav-text">Ulangi Panduan</span>
-                    </button>
+                    {role !== 'karyawan' && (
+                        <button 
+                            onClick={replayTour}
+                            className="nav-link w-100 border-0 bg-transparent text-start mb-2"
+                            style={{ cursor: 'pointer' }}
+                        >
+                            <i className="fas fa-play-circle" />
+                            <span className="nav-text">Ulangi Panduan</span>
+                        </button>
+                    )}
                     <button 
                         onClick={() => setShowPasswordModal(true)}
                         className="nav-link w-100 border-0 bg-transparent text-start mb-2"
