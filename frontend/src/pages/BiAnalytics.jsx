@@ -360,41 +360,34 @@ function BiAnalytics() {
                     {view === 'list' && (
                         <div className="card border-0 shadow-sm p-4 rounded-4">
                             <h5 className="fw-bold mb-4"><span className="badge bg-success me-2">Top</span>Performa Penjualan Barang</h5>
-                            <div className="table-responsive" style={{ maxHeight: "390px", overflowY: "auto", paddingRight: "5px" }}>
-                                <table className="table table-borderless align-middle mb-0">
-                                    <thead style={{ position: "sticky", top: 0, zIndex: 1, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                                        <tr className="small text-muted text-uppercase">
-                                            <th>Nama Barang</th>
-                                            <th className="text-center">Volume</th>
-                                            <th className="text-center">Margin</th>
-                                            <th className="text-end">Total Laba</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {performa.length > 0 ? performa.map((item) => (
-                                            <tr key={item.nama}>
-                                                <td><div className="fw-bold text-body">{item.nama}</div></td>
-                                                <td className="text-center text-secondary">{item.volume.toLocaleString('id-ID')} unit</td>
-                                                <td className="text-center text-primary fw-bold">{item.margin}</td>
-                                                <td className="text-end text-success fw-bold">{formatRupiah(item.laba)}</td>
-                                            </tr>
-                                        )) : (
-                                            <tr>
-                                                <td colSpan="4" className="text-center py-5">
-                                                    <div className="mb-3"><i className="fas fa-chart-pie text-muted opacity-50" style={{ fontSize: '3rem' }}></i></div>
-                                                    <h6 className="fw-bold text-body">Tidak Ada Data Penjualan</h6>
-                                                    <p className="text-muted small mb-3">Sistem belum dapat menyusun performa barang.</p>
-                                                    <button 
-                                                        onClick={() => navigate('/transaction')} 
-                                                        className="btn btn-outline-primary btn-sm px-4 rounded-pill"
-                                                    >
-                                                        Lihat Transaksi
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                            <div style={{ maxHeight: "390px", overflowY: "auto", paddingRight: "5px", display: "flex", flexDirection: "column" }}>
+                                {performa.length > 0 ? performa.map((item) => (
+                                    <div key={item.nama} className="mb-3 p-3 rounded bg-body-secondary border">
+                                        <div className="d-flex justify-content-between mb-2 border-bottom pb-2">
+                                            <span className="fw-bold text-body">{item.nama}</span>
+                                            <div>
+                                                <small className="text-muted me-1">Total Laba:</small>
+                                                <span className="fw-bold text-success">+{formatRupiah(item.laba)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="d-flex justify-content-between text-muted" style={{fontSize: "13px"}}>
+                                            <span><small>Volume:</small> <strong className="text-secondary">{item.volume.toLocaleString('id-ID')} unit</strong></span>
+                                            <span><small>Margin:</small> <span className="text-primary fw-bold">{item.margin}</span></span>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="text-center py-5">
+                                        <div className="mb-3"><i className="fas fa-chart-pie text-muted opacity-50" style={{ fontSize: '3rem' }}></i></div>
+                                        <h6 className="fw-bold text-body">Tidak Ada Data Penjualan</h6>
+                                        <p className="text-muted small mb-3">Sistem belum dapat menyusun performa barang.</p>
+                                        <button 
+                                            onClick={() => navigate('/transaction')} 
+                                            className="btn btn-outline-primary btn-sm px-4 rounded-pill"
+                                        >
+                                            Lihat Transaksi
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
