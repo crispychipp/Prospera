@@ -662,7 +662,9 @@ const unlockOvertime = async (req, res, next) => {
 
         const isPinValid = await bcrypt.compare(pin, settings.emergency_pin);
         if (!isPinValid) {
-            return res.status(401).json({ message: "PIN Darurat salah." });
+            // FIX: Menggunakan 400 (Bad Request) alih-alih 401. 
+            // 401 dicadangkan khusus untuk autentikasi global (sesi kasir).
+            return res.status(400).json({ message: "PIN Darurat salah." });
         }
 
         // Anti-Clock Drift (Diperbaiki): Generate UTC absolut di Node.js, bukan di database.

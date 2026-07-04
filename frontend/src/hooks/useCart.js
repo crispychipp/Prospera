@@ -217,6 +217,7 @@ export function useCart(products, fetchProducts, fetchHistory) {
     };
 
     const submitOvertimeAuth = async (pin) => {
+        setSaving(true);
         try {
             await apiFetch("/transactions/unlock-overtime", {
                 method: "POST",
@@ -224,10 +225,11 @@ export function useCart(products, fetchProducts, fetchHistory) {
             });
             // Sukses buka sesi, tutup modal dan ulangi transaksi
             setOvertimeModal({ isOpen: false, errorMsg: '' });
-            await saveTransaction();
+            await saveTransaction(); // Di dalam sini sudah ada setSaving(false) pada catch/finally
         } catch (err) {
             const errorMessage = formatError(err);
             showToast(errorMessage, "danger");
+            setSaving(false); // MATIKAN LOADING AGAR LAYAR TIDAK FREEZE
             throw new Error(errorMessage);
         }
     };
